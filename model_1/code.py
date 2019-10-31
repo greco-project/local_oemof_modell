@@ -30,6 +30,7 @@ logging.info('Energy system created and initialized')
 # Creating the necessary buses
 
 elbus = Bus(label='electricity')
+elbus2 = Bus(label='electricity')
 
 logging.info('Necessary buses for the system created')
 
@@ -38,7 +39,7 @@ logging.info('Necessary buses for the system created')
 epc_pv = economics.annuity(capex=1000, n=20, wacc=0.05)
 epc_storage = economics.annuity(capex=1000, n=20, wacc=0.05)
 
-pv = Source(label='pv', outputs={elbus: Flow(actual_value=data['pv'],
+pv = Source(label='pv', outputs={elbus2: Flow(actual_value=data['pv'],
                                              fixed=True, investment=Investment(ep_costs=epc_pv))})
 
 demand_el = Sink(label='demand_el', inputs={elbus: Flow(nominal_value=1, actual_value=data['demand_el'], fixed=False)})
@@ -46,7 +47,7 @@ excess_el = Sink(label='excess_el', inputs={elbus: Flow(variable_costs=1)})
 shortage_el = Source(label='shortage_el', outputs={elbus: Flow(variable_costs=1e4)})
 
 el_storage = GenericStorage(label='el_storage',
-                            inputs={elbus: Flow(variable_costs=0.0001)},
+                            inputs={elbus2: Flow(variable_costs=0.0001)},
                             outputs={elbus: Flow()},
                             loss_rate=0.0001,
                             initial_storage_level=0,
@@ -58,7 +59,7 @@ el_storage = GenericStorage(label='el_storage',
 
 # Adding all the components to the energy system
 
-es.add(excess_el, demand_el, el_storage, pv, shortage_el, elbus)
+es.add(excess_el, demand_el, el_storage, pv, shortage_el, elbus, elbus2)
 
 # Create the model for optimization and run the optimization
 
