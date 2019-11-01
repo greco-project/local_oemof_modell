@@ -36,17 +36,17 @@ logging.info('Necessary buses for the system created')
 epc_pv = economics.annuity(capex=1000, n=20, wacc=0.05)
 epc_storage = economics.annuity(capex=1000, n=20, wacc=0.05)
 
-pv = Source(label='pv', outputs={elbus2: Flow(actual_value=data['pv'],
+pv = Source(label='pv', outputs={elbus2: Flow(actual_value=data['pv'], nominal_value=None,
                                               fixed=True, investment=Investment(ep_costs=epc_pv))})
 
 demand_el = Sink(label='demand_el', inputs={elbus: Flow(nominal_value=1, actual_value=data['demand_el'], fixed=False)})
-excess_el = Sink(label='excess_el', inputs={elbus: Flow(variable_costs=-1e2)})
+excess_el = Sink(label='excess_el', inputs={elbus: Flow(variable_costs=0)})
 shortage_el = Source(label='shortage_el', outputs={elbus: Flow(variable_costs=1e6)})
 
 el_storage = GenericStorage(label='el_storage',
                             inputs={elbus2: Flow(variable_costs=0.0001)},
                             outputs={elbus: Flow()},
-                            loss_rate=0.0001,
+                            loss_rate=0.00,
                             initial_storage_level=0,
                             invest_relation_input_capacity=1 / 6,
                             invest_relation_output_capacity=1 / 6,
