@@ -3,11 +3,9 @@
 import logging
 import oemof
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from oemof.solph import (Sink, Source, Bus, Flow, EnergySystem, Investment, Model)
 from oemof.solph.components import GenericStorage
-import oemof.outputlib as outputlib
 from oemof.outputlib import processing, views
 import pprint as pp
 
@@ -42,8 +40,8 @@ pv = Source(label='pv', outputs={elbus2: Flow(actual_value=data['pv'],
                                               fixed=True, investment=Investment(ep_costs=epc_pv))})
 
 demand_el = Sink(label='demand_el', inputs={elbus: Flow(nominal_value=1, actual_value=data['demand_el'], fixed=False)})
-excess_el = Sink(label='excess_el', inputs={elbus: Flow(variable_costs=1)})
-shortage_el = Source(label='shortage_el', outputs={elbus: Flow(variable_costs=1e4)})
+excess_el = Sink(label='excess_el', inputs={elbus: Flow(variable_costs=-1e2)})
+shortage_el = Source(label='shortage_el', outputs={elbus: Flow(variable_costs=1e6)})
 
 el_storage = GenericStorage(label='el_storage',
                             inputs={elbus2: Flow(variable_costs=0.0001)},
