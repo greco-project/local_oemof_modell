@@ -23,8 +23,7 @@ except ImportError:
     plt = None
 
 # read example temperature series
-
-datapath = os.path.join(os.path.dirname(__file__), '/home/local/RL-INSTITUT/inia.steinbach/Dokumente/oemof/demandlib/demandlib/examples/example_data.csv')
+datapath = os.path.join(os.path.dirname(__file__), 'Data/example_data_oemof.csv')
 temperature = pd.read_csv(datapath)["temperature"]
 
 
@@ -54,14 +53,15 @@ def calculate_heat_demand(country, population, year):
                             periods=8760, freq='H'))
 
     # calculate annual demand
-    filename1='/home/local/RL-INSTITUT/inia.steinbach/rl-institut/04_Projekte/220_GRECO/03-Projektinhalte/AP4_High_Penetration_of_Photovoltaics/T4_all_Lastprofile/01_Household_profiles/Coal_consumption_residential.csv'
-    filename2 ='/home/local/RL-INSTITUT/inia.steinbach/rl-institut/04_Projekte/220_GRECO/03-Projektinhalte/AP4_High_Penetration_of_Photovoltaics/T4_all_Lastprofile/01_Household_profiles/Gas_consumption_residential.csv'
+    filename1=os.path.join(os.path.dirname(__file__), 'Data/Coal_consumption_residential.csv')
+    filename2=os.path.join(os.path.dirname(__file__), 'Data/Gas_consumption_residential.csv')
     coal_demand= pd.read_csv(filename1, sep=';', index_col=0, header=1)
     gas_demand = pd.read_csv(filename2, sep=';', index_col=0, header=1)
     coal_demand[year] = pd.to_numeric(coal_demand[year], errors='coerce')
     gas_demand[year] = pd.to_numeric(gas_demand[year], errors='coerce')
 
-    populations=pd.read_csv('/home/local/RL-INSTITUT/inia.steinbach/Dokumente/oemof/Lastprofile_GRECO/Data/EUROSTAT_population.csv', index_col=0, sep=';')
+    filename3=os.path.join(os.path.dirname(__file__), 'Data/EUROSTAT_population.csv')
+    populations=pd.read_csv(filename3, index_col=0, sep=';')
     total_heat_demand=(coal_demand.at[country, year] * 11.63 * 1000000) + (gas_demand.at[country, year] * 11.63 * 1000000)
     annual_heat_demand_per_population=(total_heat_demand/populations.at[country, 'Population']) * population
 

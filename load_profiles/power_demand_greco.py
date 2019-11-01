@@ -45,10 +45,11 @@ holidays = {
 
 def calculate_power_demand(country, population, year):
 
-    filename='/home/local/RL-INSTITUT/inia.steinbach/Dokumente/oemof/Lastprofile_GRECO/Data/Electricity_consumption_residential.csv'
+    filename=os.path.join(os.path.dirname(__file__), 'Data/Electricity_consumption_residential.csv')
     powerstat= pd.read_csv(filename, sep=';', index_col=0)
 
-    populations=pd.read_csv('/home/local/RL-INSTITUT/inia.steinbach/Dokumente/oemof/Lastprofile_GRECO/Data/EUROSTAT_population.csv', index_col=0, sep=';')
+    filename1=os.path.join(os.path.dirname(__file__), 'Data/EUROSTAT_population.csv')
+    populations=pd.read_csv(filename1, index_col=0, sep=';')
     national_energyconsumption=powerstat.at[country, year] * 11.63 * 1000000
     annual_demand_per_population=(national_energyconsumption / populations.at[country, 'Population']) * population
 
