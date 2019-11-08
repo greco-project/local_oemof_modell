@@ -15,7 +15,7 @@ oemof.tools.logger.define_logging(logfile='oemof example.log', screen_level=logg
 
 # Creating the energy system
 
-date_time_index = pd.date_range('1/1/2018', periods=24 * 365, freq='H')
+date_time_index = pd.date_range('1/1/2018', periods=24*365, freq='H')
 
 es = EnergySystem(timeindex=date_time_index)
 
@@ -26,8 +26,7 @@ logging.info('Energy system created and initialized')
 
 # Creating the necessary buses
 
-elbus = Bus(label='mainbus')
-elbus2 = Bus(label='pvtobatbus')
+elbus = Bus(label='elbus')
 
 logging.info('Necessary buses for the system created')
 
@@ -36,18 +35,18 @@ logging.info('Necessary buses for the system created')
 epc_pv = economics.annuity(capex=1000, n=20, wacc=0.05)
 epc_storage = economics.annuity(capex=1000, n=20, wacc=0.05)
 
-pv = Source(label='pv', outputs={elbus2: Flow(actual_value=data['pv'], nominal_value=None,
+pv = Source(label='pv', outputs={elbus: Flow(actual_value=data['pv'], nominal_value=None,
                                               fixed=True, investment=Investment(ep_costs=epc_pv))})
 
-demand_el = Sink(label='demand_el', inputs={elbus: Flow(nominal_value=1, actual_value=data['demand_el'], fixed=False)})
-excess_el = Sink(label='excess_el', inputs={elbus: Flow(variable_costs=0)})
-shortage_el = Source(label='shortage_el', outputs={elbus: Flow(variable_costs=1e6)})
+demand_el = Sink(label='demand_el', inputs={elbus: Flow(nominal_value=1, actual_value=data['demand_el'], fixed=True)})
+excess_el = Sink(label='excess_el', inputs={elbus: Flow()})
+shortage_el = Source(label='shortage_el', outputs={elbus: Flow(variable_costs=10)})
 
 el_storage = GenericStorage(label='el_storage',
-                            inputs={elbus2: Flow(variable_costs=0.0001)},
+                            inputs={elbus: Flow(variable_costs=0.0001)},
                             outputs={elbus: Flow()},
                             loss_rate=0.00,
-                            initial_storage_level=0,
+                            initial_storage_level=0.5,
                             invest_relation_input_capacity=1 / 6,
                             invest_relation_output_capacity=1 / 6,
                             inflow_conversion_factor=0.9,
@@ -56,7 +55,7 @@ el_storage = GenericStorage(label='el_storage',
 
 # Adding all the components to the energy system
 
-es.add(excess_el, demand_el, el_storage, pv, shortage_el, elbus, elbus2)
+es.add(excess_el, demand_el, el_storage, pv, shortage_el, elbus)
 
 # Create the model for optimization and run the optimization
 
@@ -70,7 +69,7 @@ logging.info('Optimization successful')
 results = processing.results(opt_model)
 
 custom_storage = views.node(results, 'el_storage')
-electricity_bus = views.node(results, 'mainbus')
+electricity_bus = views.node(results, 'elbus')ŧ
 
 meta_results = processing.meta_results(opt_model)
 pp.pprint(meta_results)
@@ -79,10 +78,10 @@ my_results = electricity_bus['scalars']
 
 # installed capacity of storage in MWh
 my_results['storage_invest_MWh'] = (results[(el_storage, None)]
-                                    ['scalars']['invest'] / 1e3)
+                                    ['scalars']['invest'])
 
 # installed capacity of PV power plant in MW
-my_results['PV_invest_MW'] = (results[(pv, elbus2)]
-                              ['scalars']['invest'] / 1e3)
+my_results['PV_invest_MW'] = (results[(pv, elbus)]
+                              ['scalars']['invest'])
 
 pp.pprint(my_results)
