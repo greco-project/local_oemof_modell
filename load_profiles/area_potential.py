@@ -7,6 +7,7 @@ calculating the available area potential for PV-modules on the rooftop and facad
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 
 def calculate_area_potential(population):
 
@@ -19,19 +20,30 @@ def calculate_area_potential(population):
             available area for gableroof, available south facade,
             available east+west facades
     """
+    # read example temperature series
+    datapath = os.path.join(os.path.dirname(__file__),
+                            'Data/building_parameters.csv')
+    bp = pd.read_csv(datapath, index_col=0)
+    bp=bp.T
+    population_per_storey=bp.iloc[0]['population per storey']
+    number_houses = bp.iloc[0]['number of houses']
+    total_floor_area = bp.iloc[0]['total storey area']
+    length_south_facade = bp.iloc[0]['length south facade']
+    length_eastwest_facade = bp.iloc[0]['length eastwest facade']
+    hight_per_storey=bp.iloc[0]['hight storey']
 
-    storeys= population/24/5
+    storeys= population/population_per_storey/number_houses
 
-    flatroof_area = 1232 * 5
-    gableroof_area = (1232 * 5 / 100) * 70
-    total_floor_area = 1232 *5 * storeys
+    flatroof_area = total_floor_area * number_houses
+    gableroof_area = (total_floor_area * number_houses / 100) * 70
+    total_floor_area = total_floor_area *number_houses * storeys
 
     if storeys > 3:
         used_storeys = storeys - 3
 #        south_facade = (56 * 3 * used_storeys - (56 * 3 * used_storeys / 100) *30) * 5
 #        eastwest_facade = (22 * 3 * 2 * used_storeys - (120*4 / 100) *4) *5
-        south_facade = 56 * 3 * used_storeys * 5
-        eastwest_facade = 22 * 3 * 2 * used_storeys *5
+        south_facade = length_south_facade * hight_per_storey * used_storeys * number_houses
+        eastwest_facade = length_eastwest_facade * hight_per_storey * 2 * used_storeys *number_houses
 
         used_south_facade = south_facade/100 * 50
         used_eastwest_facade = eastwest_facade/100 * 80
@@ -48,7 +60,7 @@ def calculate_area_potential(population):
     return(storeys, used_south_facade, used_eastwest_facade, total_floor_area)
 
 def plot_facade_potential():
-    
+
     population = range(0, 1300, 120)
     storeys = {}
     south = {}
@@ -87,4 +99,5 @@ def plot_facade_potential():
 
 
 if __name__ == '__main__':
-    plot_facade_potential()
+    calculate_area_potential(population=600)
+    #plot_facade_potential()
