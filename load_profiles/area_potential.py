@@ -27,24 +27,28 @@ def calculate_area_potential(population):
     bp=bp.T
     population_per_storey=bp.iloc[0]['population per storey']
     number_houses = bp.iloc[0]['number of houses']
-    total_floor_area = bp.iloc[0]['total storey area']
+    floor_area = bp.iloc[0]['total storey area']
     length_south_facade = bp.iloc[0]['length south facade']
     length_eastwest_facade = bp.iloc[0]['length eastwest facade']
     hight_per_storey=bp.iloc[0]['hight storey']
 
+    #number of storeys for each building
     storeys= population/population_per_storey/number_houses
 
-    flatroof_area = total_floor_area * number_houses
-    gableroof_area = (total_floor_area * number_houses / 100) * 70
-    total_floor_area = total_floor_area *number_houses * storeys
+    flatroof_area = floor_area * number_houses
+    # the south facing side of the gable roof with 45° elevation equals
+    # 70% of the floor area
+    gableroof_area = (floor_area * number_houses / 100) * 70
+    total_floor_area = floor_area *number_houses * storeys
 
+    # solar panels are only starting from the fourth storey (see Hachem2014)
     if storeys > 3:
         used_storeys = storeys - 3
-#        south_facade = (56 * 3 * used_storeys - (56 * 3 * used_storeys / 100) *30) * 5
-#        eastwest_facade = (22 * 3 * 2 * used_storeys - (120*4 / 100) *4) *5
         south_facade = length_south_facade * hight_per_storey * used_storeys * number_houses
         eastwest_facade = length_eastwest_facade * hight_per_storey * 2 * used_storeys *number_houses
 
+        # 50 % of the south facade and 80% of the west and east facade can be used
+        # due to windows (see Hachem2014)
         used_south_facade = south_facade/100 * 50
         used_eastwest_facade = eastwest_facade/100 * 80
     else:
