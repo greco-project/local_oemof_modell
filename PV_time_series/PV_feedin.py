@@ -249,7 +249,7 @@ def create_normalized_CPV_timeseries(lat, lon, weather, surface_azimuth, surface
 #def create_PSI_timeseries(lat, lon, weather, surface_azimuth, surface_tilt):
 
 
-def calculate_nominal_values(type, area, surface_azimuth, surface_tilt):
+def nominal_values_PV(type, area, surface_azimuth, surface_tilt):
 
     """The nominal value for each PV technology is constructed by the size of
     the module,its peak power and the total available area. The nominal value
