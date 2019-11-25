@@ -33,7 +33,7 @@ def create_PV_timeseries(lat, lon, weather, PV_setup=None, plot=True):
     """For each building surface listed in PV_setup, one PV timeseries is
     created with regard to the technology and its orientation used on this
     building surface. All timeseries are normalized to the peak power of the
-    module unsed.
+    module unsed and stored as csv files in ./Data/...
 
     Parameters
     ----------
@@ -41,15 +41,14 @@ def create_PV_timeseries(lat, lon, weather, PV_setup=None, plot=True):
         latitude
     lon: float
         longitude
-    weather: pd.DataFrame
-    surface_azimuth: float
-        surface azimuth of the modules
-    surface_tilt: float
-        surface tilt of the modules
+    PV_setup: dict
+        with collumns: technology, surface_azimuth, surface_tilt
+        a tilt of 0 resembles a vertical orientation.
+    plot: boolean
 
     Returns
     -------
-    pd.DataFrame
+    None
     """
 
     if PV_setup is None:
@@ -108,8 +107,8 @@ def create_PV_timeseries(lat, lon, weather, PV_setup=None, plot=True):
         else:
             print(i, 'is not in technologies. Please chose si, cpv or psi.')
 
-
-    plt.show()
+    if plot==True:
+        plt.show()
 
 def get_optimal_pv_angle(lat):
     """ About 27° to 34° from ground in Germany.
@@ -252,9 +251,9 @@ def create_normalized_CPV_timeseries(lat, lon, weather, surface_azimuth, surface
 
 def calculate_nominal_values(type, area, surface_azimuth, surface_tilt):
 
-    """The nominal value for each PV time is constructed by the size of the cell,
-    its peak power and the total available area. The nominal value functions as
-    a limit for the potential installed capacity of pv in oemof.
+    """The nominal value for each PV technology is constructed by the size of
+    the module,its peak power and the total available area. The nominal value
+    functions as a limit for the potential installed capacity of pv in oemof.
 
     Parameters
     ----------
