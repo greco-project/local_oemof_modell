@@ -11,20 +11,45 @@ import pvlib
 import pvlib_CPVsystem as cpv
 import INS_CPV as ins
 
+"""
+This module is designed for the use with the pvlib.
+
+The weather data set has to be a DataFrame with the following columns:
+
+pvlib:
+ * ghi - global horizontal irradiation [W/m2]
+ * dni - direct normal irradiation [W/m2]
+ * dhi - diffuse horizontal irradiation [W/m2]
+ * temp_air - ambient temperature [°C]
+ * wind_speed - wind speed [m/s]
+"""
+
+
+
+
+
 def create_PV_timeseries(lat, lon, weather, PV_setup=None, plot=True):
 
-    """
-    This function creates all PV time series for the three technologies for
-    different orientations and saves each time series as csv.
+    """For each building surface listed in PV_setup, one PV timeseries is
+    created with regard to the technology and its orientation used on this
+    building surface. All timeseries are normalized to the peak power of the
+    module unsed.
 
+    Parameters
+    ----------
+    lat: float
+        latitude
+    lon: float
+        longitude
+    weather: pd.DataFrame
+    surface_azimuth: float
+        surface azimuth of the modules
+    surface_tilt: float
+        surface tilt of the modules
 
-    :param lat: latitude of the location
-    :param lon: longitude of the location
-    :param weather: weather Dataframe in the format of pvlib
-    :param technology: dataframe with the technologies and the according orientations
-                        with the columns: technology, surface_azimuth and
-                        surface_tilt
-    :return: None
+    Returns
+    -------
+    pd.DataFrame
     """
 
     if PV_setup is None:
@@ -49,7 +74,7 @@ def create_PV_timeseries(lat, lon, weather, PV_setup=None, plot=True):
                 if k == "optimal":
                     k=get_optimal_pv_angle(lat)
 
-                timeseries=create_SI_timeseries(lat=lat, lon=lon, weather=weather, surface_azimuth=j, surface_tilt=k)
+                timeseries=create_normalized_SI_timeseries(lat=lat, lon=lon, weather=weather, surface_azimuth=j, surface_tilt=k)
                 timeseries.to_csv('Data/PV_feedin_SI_' + str(j) + '_' + str(k) + '.csv')
 
                 if plot==True:
@@ -63,7 +88,7 @@ def create_PV_timeseries(lat, lon, weather, PV_setup=None, plot=True):
                 k = pd.to_numeric(k, errors='ignore')
                 if k == "optimal":
                     k=get_optimal_pv_angle(lat)
-                timeseries=create_CPV_timeseries(lat, lon, weather, j, k)
+                timeseries=create_normalized_CPV_timeseries(lat, lon, weather, j, k)
                 timeseries.to_csv('Data/PV_feedin_CPV_' + str(j) + '_' + str(k) + '.csv')
 
                 if plot==True:
@@ -77,7 +102,7 @@ def create_PV_timeseries(lat, lon, weather, PV_setup=None, plot=True):
                 k = pd.to_numeric(k, errors='ignore')
                 if k == "optimal":
                     k=get_optimal_pv_angle(lat)
-                timeseries=create_SI_timeseries(lat, lon, weather, j, k)
+                timeseries=create_normalized_SI_timeseries(lat, lon, weather, j, k)
                 timeseries.to_csv('Data/PV_feedin_PSI_' + str(j) + '_' + str(k) + '.csv')
 
         else:
@@ -96,22 +121,24 @@ def get_optimal_pv_angle(lat):
 
 def set_up_system(type, surface_azimuth, surface_tilt):
 
-    """Sets up the PV system and returns the initialized system and the module
-    parameters as a dictionary
+    """Sets up the PV system for the given type of technology and returns
+    the initialized system and the module parameters as a dictionary.
 
     Parameters
     ----------
     type: str
-        PV, CPV or PSI
-    surface_azimuth: int
-    surface_tilt: int
+        possible technologies are: PV, CPV or PSI
+    surface_azimuth: : float
+        surface azimuth of the modules
+    surface_tilt: : float
+        surface tilt of the modules
 
     Returns
     -------
     PVSystem, pandas.Series
     """
 
-    if type=="PV":
+    if type=="si":
 
         sandia_modules = pvlib.pvsystem.retrieve_sam('SandiaMod')
         sandia_module = sandia_modules['Canadian_Solar_CS5P_220M___2009_']
@@ -125,7 +152,7 @@ def set_up_system(type, surface_azimuth, surface_tilt):
 
         return system, sandia_module
 
-    if type=='CPV':
+    if type=='cpv':
 
         module_params = {'gamma_ref': 5.524, 'mu_gamma': 0.003,
                          'I_L_ref': 0.96,
@@ -150,35 +177,69 @@ def set_up_system(type, surface_azimuth, surface_tilt):
     if type=='PSI':
         pass
 
+    else:
+        print(type, 'is not in technologies. Please chose si, cpv or psi.')
 
-def create_SI_timeseries(lat, lon, weather, surface_azimuth, surface_tilt):
 
+def create_normalized_SI_timeseries(lat, lon, weather, surface_azimuth, surface_tilt):
+
+    """The cpv timeseries is created for a given weather dataframe, at a given
+    orientation for the flat plate module "'Canadian_Solar_CS5P_220M___2009_'".
+     The time series is normalized by the peak power of the module.
+
+    Parameters
+    ----------
+    lat: float
+        latitude
+    lon: float
+        longitude
+    weather: pd.DataFrame
+    surface_azimuth: float
+        surface azimuth of the modules
+    surface_tilt: float
+        surface tilt of the modules
+
+    Returns
+    -------
+    pd.DataFrame
     """
-    creates an hourly time series for one SI module at a certain location and weather
-    data for one year. The output time series is scaled to a capacity of ... MW
 
-    :param location:
-    :param weather:
-    :param orientation:
-    :return:
-    """
-
-    system, module_parameters=set_up_system(type="PV",
+    system, module_parameters=set_up_system(type="si",
                                             surface_azimuth=surface_azimuth,
                                             surface_tilt=surface_tilt)
     location=Location(latitude=lat, longitude=lon)
 
     peak = module_parameters['Impo'] * module_parameters['Vmpo']
 
-    mc = ModelChain(system, location)
+    mc = ModelChain(system, location, orientation_strategy=None, aoi_model='sapm', spectral_model='sapm')
     mc.run_model(times=weather.index, weather=weather)
     output=mc.dc
-    return output['p_mp']/peak
+    return (output['p_mp']/peak).clip(0)
 
 
-def create_CPV_timeseries(lat, lon, weather, surface_azimuth, surface_tilt):
+def create_normalized_CPV_timeseries(lat, lon, weather, surface_azimuth, surface_tilt):
 
-    system, module_parameters=set_up_system(type="CPV",
+    """The cpv timeseries is created for a given weather dataframe, at a given
+    orientation for the INSOLIGHT CPV module. The time series is normalized by
+    the peak power of the module.
+
+    Parameters
+    ----------
+    lat: float
+        latitude
+    lon: float
+        longitude
+    weather: pd.DataFrame
+    surface_azimuth: float
+        surface azimuth of the modules
+    surface_tilt: float
+        surface tilt of the modules
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    system, module_parameters=set_up_system(type="cpv",
                                             surface_azimuth=surface_azimuth,
                                             surface_tilt=surface_tilt)
 
@@ -191,19 +252,25 @@ def create_CPV_timeseries(lat, lon, weather, surface_azimuth, surface_tilt):
 
 def calculate_nominal_values(type, area, surface_azimuth, surface_tilt):
 
-    """Sets up the PV system and returns the initialized system and the module
-    parameters as a dictionary
+    """The nominal value for each PV time is constructed by the size of the cell,
+    its peak power and the total available area. The nominal value functions as
+    a limit for the potential installed capacity of pv in oemof.
 
     Parameters
     ----------
     type: str
-        PV, CPV or PSI
-    surface_azimuth: int
-    surface_tilt: int
+        possible values are: PV, CPV or PSI
+    area: float
+        total available surface area
+    surface_azimuth: float
+        surface azimuth of the modules
+    surface_tilt: float
+        surface tilt of the modules
 
     Returns
     -------
-    PVSystem, pandas.Series
+    int
+        the rounded possible installed capacity for an area
     """
 
     system, module_parameters = set_up_system(type=type,
@@ -213,7 +280,7 @@ def calculate_nominal_values(type, area, surface_azimuth, surface_tilt):
     peak=module_parameters['Impo']*module_parameters['Vmpo']
     module_size= module_parameters['Area']
 
-    return area/module_size*peak
+    return round(area/module_size*peak)
 
 
 
@@ -229,13 +296,10 @@ if __name__ == '__main__':
     weather_df.index = pd.to_datetime(weather_df.index).tz_convert(
         'Europe/Berlin')
 
-#    create_PV_timeseries(lat=40.3, lon=5.4, weather=weather_df, PV_setup=None)
+    create_PV_timeseries(lat=40.3, lon=5.4, weather=weather_df, PV_setup=None)
 
-#    nominal_value_PV=calculate_nominal_values(type='PV', area=1323, surface_azimuth=180, surface_tilt=30)
-#    nominal_value_CPV = calculate_nominal_values(type='CPV', area=1323,
-#                                             surface_azimuth=180,
-#                                             surface_tilt=30)
-#    print(nominal_value_PV, nominal_value_CPV)
+    nominal_value_PV=calculate_nominal_values(type='PV', area=1323, surface_azimuth=180, surface_tilt='optimal')
 
-    cpv=create_CPV_timeseries(lat=40.3, lon=5.4, weather=weather_df, surface_azimuth=180, surface_tilt=30)
-    print(cpv)
+    nominal_value_CPV = calculate_nominal_values(type='CPV', area=1323,
+                                             surface_azimuth=180,
+                                             surface_tilt='optimal')
