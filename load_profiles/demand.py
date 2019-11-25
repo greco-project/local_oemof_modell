@@ -1,4 +1,4 @@
-  # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Creating demand profiles.
 The heat demand uses bdew profiles.
@@ -13,10 +13,8 @@ Optional:
 
 """
 
-import datetime
 import demandlib.bdew as bdew
 import demandlib.particular_profiles as profiles
-from datetime import time as settime
 import os
 import pandas as pd
 try:
