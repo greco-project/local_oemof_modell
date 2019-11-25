@@ -11,16 +11,22 @@ import os
 
 def calculate_area_potential(population):
 
-    """
-    calculates the area potential of the rooftop, south and east+west facades
+    """Calculates the area potential of the rooftop, south and east+west facades
     for a given population
 
-    :param population:
-    :return: number of storeys of each house, available area for flatroof,
-            available area for gableroof, available south facade,
-            available east+west facades
+    Parameters
+    ----------
+    population: int
+        the population of the district
+
+    Returns
+    -------
+    list
+        the list contains: storeys, used_south_facade, used_eastwest_facade,
+        total_floor_area, flatroof_area)
     """
-    # read example temperature series
+
+    # read building parameters
     datapath = os.path.join(os.path.dirname(__file__),
                             'Data/building_parameters.csv')
     bp = pd.read_csv(datapath, index_col=0)
@@ -61,9 +67,10 @@ def calculate_area_potential(population):
           "south facade area:", used_south_facade, "\n"
           "eastwest facade area:", used_eastwest_facade, "\n")
 
-    return(storeys, used_south_facade, used_eastwest_facade, total_floor_area)
+    return(storeys, used_south_facade, used_eastwest_facade, total_floor_area,
+           flatroof_area)
 
-def plot_facade_potential():
+def plot_facade_potential(): #todo: delete this function?
 
     population = range(0, 1300, 120)
     storeys = {}
@@ -104,4 +111,4 @@ def plot_facade_potential():
 
 if __name__ == '__main__':
     calculate_area_potential(population=600)
-    #plot_facade_potential()
+#    plot_facade_potential()
